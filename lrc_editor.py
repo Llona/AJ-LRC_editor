@@ -20,14 +20,11 @@ class LrcEditor(object):
             time_match = re.match(time_match_str, line_content)
             if time_match:
                 all_time_list = self.get_all_match_list_from_str(time_tag_str, line_content)
-            else:
-                adj_time_lrc.append(line_content)
-                continue
+                for time_tag in list(OrderedDict.fromkeys(all_time_list)):
+                    adj_time_tag = self.time_tag_adjust(time_tag, adj_time_ms)
+                    # print(adj_time_tag)
+                    line_content = line_content.replace(time_tag, adj_time_tag)
 
-            for time_tag in list(OrderedDict.fromkeys(all_time_list)):
-                adj_time_tag = self.time_tag_adjust(time_tag, adj_time_ms)
-                # print(adj_time_tag)
-                line_content = line_content.replace(time_tag, adj_time_tag)
             adj_time_lrc.append(line_content)
 
         with open(lrc_file_path, 'w', encoding='utf8') as f:
@@ -48,7 +45,11 @@ class LrcEditor(object):
         time_tag_time_h = datetime.strptime(time_tag_loc, time_tag_format)
         # print(time_tag_time_h)
         adjed_time_h = time_tag_time_h + adj_time_ms_h
-        adjed_time_str = "["+adjed_time_h.time().strftime(time_tag_format)[:-4]+"]"
+
+        if adjed_time_h.year <= 1899:
+            adjed_time_str = "[00:00.00]"
+        else:
+            adjed_time_str = "["+adjed_time_h.time().strftime(time_tag_format)[:-4]+"]"
         return adjed_time_str
 
     @staticmethod
