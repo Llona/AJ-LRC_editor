@@ -10,8 +10,10 @@ class LrcEditor(object):
         print("into lrc editor")
 
     def adjust_lrc_time(self, lrc_file_path, adj_time_ms):
-        time_tag_str = r"\[\d\d:\d\d.\d\d\]"
-        time_match_str = r"\[\d\d:\d\d.\d\d].*"
+        # time_tag_str = r"\[\d\d:\d\d.\d\d\]"
+        # time_match_str = r"\[\d\d:\d\d.\d\d].*"
+        time_tag_str = r"\[\d\d:\d\d.\d+\]"
+        time_match_str = r"\[\d\d:\d\d.\d+].*"
         adj_time_lrc = []
 
         lrc_content = self.read_file(lrc_file_path)
@@ -31,26 +33,37 @@ class LrcEditor(object):
             for line in adj_time_lrc:
                 f.write(line)
 
-    @staticmethod
-    def time_tag_adjust(time_tag, adj_time_ms):
+    def time_tag_adjust(self, time_tag, adj_time_ms):
         time_tag_format = '%M:%S.%f'
-
         time_tag_loc = time_tag
         time_tag_loc = time_tag_loc.replace("[", "")
         time_tag_loc = time_tag_loc.replace("]", "")
 
+        sec_quantity = self.get_sec_quantity(time_tag_loc)
+        if sec_quantity > 6:
+            sec_quantity = 6
+
         adj_time_ms_h = timedelta(milliseconds=int(adj_time_ms))
         # print(adj_time_ms_h)
-
         time_tag_time_h = datetime.strptime(time_tag_loc, time_tag_format)
         # print(time_tag_time_h)
         adjed_time_h = time_tag_time_h + adj_time_ms_h
 
         if adjed_time_h.year <= 1899:
-            adjed_time_str = "[00:00.00]"
+            adjed_time_str = "[00:00."+"0"*sec_quantity+"]"
         else:
-            adjed_time_str = "["+adjed_time_h.time().strftime(time_tag_format)[:-4]+"]"
+            sec_str_reduce_num = (6 - sec_quantity) * -1
+            if sec_str_reduce_num == 0:
+                sec_str_reduce_num = None
+            adjed_time_str = "["+adjed_time_h.time().strftime(time_tag_format)[:sec_str_reduce_num]+"]"
         return adjed_time_str
+
+    @staticmethod
+    def get_sec_quantity(time_tag):
+        # print(time_tag)
+        sec_str = time_tag.split('.')[1]
+        # print(sec_str)
+        return len(sec_str)
 
     @staticmethod
     def get_all_match_list_from_str(match_str, content_str):
